@@ -1,26 +1,240 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================
+   LITERIA — Design Tokens & Global Styles
+   ============================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: #F7F5F0;
+  --color-sand: #EAE6DF;
+  --color-ink: #1C1C1C;
+  --color-graphite: #5A5A5A;
+  --color-saddle: #8B4513;
+
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Manrope", sans-serif;
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-circ: cubic-bezier(0.85, 0, 0.15, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --bg-color: #F7F5F0;
+  --text-color: #1C1C1C;
+  --expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   Base
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: auto;
+}
+
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-x: hidden;
+  cursor: none;
+  font-family: var(--font-sans, "Manrope", sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #1C1C1C;
+  color: #F7F5F0;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
+   Custom Cursor
+   ============================================ */
+#cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: difference;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.65rem;
+  font-family: "Manrope", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #000;
+  opacity: 0;
+  transition: width 0.4s var(--expo), height 0.4s var(--expo), background-color 0.4s var(--expo), opacity 0.3s;
+}
+
+#cursor.active {
+  opacity: 1;
+}
+
+#cursor.hover-book {
+  width: 100px;
+  height: 100px;
+  background-color: #fff;
+}
+
+/* ============================================
+   Layout Structure for Footer Reveal
+   ============================================ */
+.main-wrapper {
+  position: relative;
+  z-index: 2;
+  background-color: inherit;
+  margin-bottom: 80vh;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+}
+
+.footer-reveal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80vh;
+  z-index: 1;
+  background-color: #1C1C1C;
+  color: #F7F5F0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   Typography Utilities
+   ============================================ */
+.text-huge {
+  font-size: clamp(4rem, 10vw, 10rem);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+}
+
+.title-mask {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+}
+
+.title-line {
+  transform: translateY(110%);
+  display: inline-block;
+}
+
+/* ============================================
+   Archive Section
+   ============================================ */
+.archive-wrapper {
+  width: max-content;
+  display: flex;
+  padding-left: 10vw;
+  padding-right: 20vw;
+}
+
+.book-item {
+  perspective: 1000px;
+}
+
+.book-cover {
+  box-shadow: 15px 20px 40px rgba(0, 0, 0, 0.15), -5px 5px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* ============================================
+   Detail View (FLIP Target)
+   ============================================ */
+#detail-view {
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 0.8s var(--expo);
+}
+
+#detail-view.is-open {
+  clip-path: inset(0 0 0 0);
+}
+
+.detail-cover-container img {
+  box-shadow: 20px 30px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   Add to Cart Button Micro-interaction
+   ============================================ */
+.btn-add {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.6s var(--expo);
+  width: 240px;
+}
+
+.btn-add .btn-text-success {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 150%);
+  opacity: 0;
+  transition: all 0.6s var(--expo);
+  white-space: nowrap;
+}
+
+.btn-add.added {
+  background-color: #8B4513;
+  width: 280px;
+}
+
+.btn-add.added .btn-text-original {
+  transform: translateY(-150%);
+  opacity: 0;
+}
+
+.btn-add.added .btn-text-success {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  color: #F7F5F0;
+}
+
+/* ============================================
+   Author SVG Displacement Filter
+   ============================================ */
+.author-img {
+  filter: url(#displacementFilter);
+  transform: scale(1.1);
 }

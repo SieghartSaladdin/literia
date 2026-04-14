@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="id" class="antialiased">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Literia | Membaca Ulang Dunia</title>
+
+    <!-- Google Fonts: Cormorant Garamond (Serif/Display) & Manrope (Sans/Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS (via CDN for utility setup) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#F7F5F0',
+                        sand: '#EAE6DF',
+                        ink: '#1C1C1C',
+                        graphite: '#5A5A5A',
+                        saddle: '#8B4513'
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Manrope"', 'sans-serif']
+                    },
+                    transitionTimingFunction: {
+                        'expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+                        'in-out-circ': 'cubic-bezier(0.85, 0, 0.15, 1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --bg-color: #F7F5F0;
+            --text-color: #1C1C1C;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-x: hidden;
+            cursor: none;
+            /* Hide default cursor */
+        }
+
+        ::selection {
+            background-color: #1C1C1C;
+            color: #F7F5F0;
+        }
+
+        /* Lenis Smooth Scroll Setup */
+        html.lenis {
+            height: auto;
+        }
+
+        .lenis.lenis-smooth {
+            scroll-behavior: auto;
+        }
+
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+
+        .lenis.lenis-scrolling iframe {
+            pointer-events: none;
+        }
+
+        /* Custom Cursor */
+        #cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 16px;
+            height: 16px;
+            background-color: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.65rem;
+            font-family: 'Manrope', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #000;
+            opacity: 0;
+            transition: width 0.4s var(--expo), height 0.4s var(--expo), background-color 0.4s var(--expo), opacity 0.3s;
+        }
+
+        #cursor.active {
+            opacity: 1;
+        }
+
+        #cursor.hover-book {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+        }
+
+        /* Layout Structure for Footer Reveal */
+        .main-wrapper {
+            position: relative;
+            z-index: 2;
+            background-color: inherit;
+            margin-bottom: 80vh;
+            /* Height of the footer */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        .footer-reveal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80vh;
+            z-index: 1;
+            background-color: #1C1C1C;
+            color: #F7F5F0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Typography Utilities */
+        .text-huge {
+            font-size: clamp(4rem, 10vw, 10rem);
+            line-height: 0.85;
+            letter-spacing: -0.02em;
+        }
+
+        .title-mask {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+        }
+
+        .title-line {
+            transform: translateY(110%);
+            display: inline-block;
+        }
+
+        /* Archive Section */
+        .archive-wrapper {
+            width: max-content;
+            display: flex;
+            padding-left: 10vw;
+            padding-right: 20vw;
+        }
+
+        .book-item {
+            perspective: 1000px;
+        }
+
+        .book-cover {
+            box-shadow: 15px 20px 40px rgba(0, 0, 0, 0.15), -5px 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.1s;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        /* Detail View (FLIP Target) */
+        #detail-view {
+            clip-path: inset(100% 0 0 0);
+            /* Hidden by default using clip-path */
+            transition: clip-path 0.8s var(--expo);
+        }
+
+        #detail-view.is-open {
+            clip-path: inset(0 0 0 0);
+        }
+
+        .detail-cover-container img {
+            box-shadow: 20px 30px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Button Micro-interaction */
+        .btn-add {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.6s var(--expo);
+            width: 240px;
+        }
+
+        .btn-add .btn-text-success {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 150%);
+            opacity: 0;
+            transition: all 0.6s var(--expo);
+            white-space: nowrap;
+        }
+
+        .btn-add.added {
+            background-color: #8B4513;
+            color: #8B4513;
+            /* Hide original text */
+            width: 280px;
+        }
+
+        .btn-add.added .btn-text-original {
+            transform: translateY(-150%);
+            opacity: 0;
+        }
+
+        .btn-add.added .btn-text-success {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+            color: #F7F5F0;
+        }
+
+        /* SVG Displacement Filter for Author Section */
+        .author-img {
+            filter: url(#displacementFilter);
+            transform: scale(1.1);
+            /* Prevent edge clipping */
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased text-ink selection:bg-ink selection:text-paper">
+
+    <!-- SVG Filters -->
+    <svg style="display: none;">
+        <defs>
+            <filter id="displacementFilter">
+                <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"
+                    id="displacementMap" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Custom Cursor -->
+    <div id="cursor">
+        <span id="cursor-text" class="opacity-0 transition-opacity duration-300">Read</span>
+    </div>
+
+    <!-- FLIP Detail View Overlay -->
+    <div id="detail-view" class="fixed inset-0 z-50 bg-paper flex flex-col md:flex-row pointer-events-none">
+        <button id="close-detail"
+            class="absolute top-8 right-8 z-50 w-12 h-12 flex items-center justify-center rounded-full border border-ink/20 hover:bg-ink hover:text-paper transition-colors duration-500 pointer-events-auto"
+            data-cursor="Close">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+        </button>
+
+        <!-- Left: Image Container -->
+        <div class="w-full md:w-1/2 h-1/2 md:h-full flex items-center justify-center bg-sand/30 relative">
+            <div id="detail-image-target" class="w-1/2 aspect-[2/3] relative detail-cover-container">
+                <!-- Flipped image will land here -->
+            </div>
+        </div>
+
+        <!-- Right: Content -->
+        <div
+            class="w-full md:w-1/2 h-1/2 md:h-full p-8 md:p-24 flex flex-col justify-center pointer-events-auto detail-content opacity-0 translate-y-10">
+            <p id="detail-author" class="font-sans text-sm tracking-widest uppercase text-graphite mb-4">Penulis</p>
+            <h2 id="detail-title" class="font-serif text-5xl md:text-7xl mb-8 leading-none">Judul Buku</h2>
+            <p id="detail-synopsis" class="font-sans text-lg md:text-xl text-graphite mb-12 max-w-md leading-relaxed">
+                Sinopsis singkat buku akan muncul di sini. Menggambarkan esensi dari karya sastra yang telah dikurasi
+                dengan cermat.
+            </p>
+
+            <div class="flex items-center gap-6 mt-auto md:mt-0">
+                <button id="btn-add-cart"
+                    class="btn-add bg-ink text-paper py-4 px-8 rounded-full font-sans text-sm uppercase tracking-widest hover:bg-graphite">
+                    <span class="btn-text-original inline-block transition-transform duration-500">Add to
+                        Collection</span>
+                    <span class="btn-text-success">Telah Ditambahkan</span>
+                </button>
+                <span class="font-serif italic text-xl text-graphite">$24.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Scrollable Wrapper -->
+    <div class="main-wrapper" id="smooth-wrapper">
+        <div id="smooth-content">
+
+            <!-- SECTION 01: HERO / THE MANIFESTO -->
+            <section
+                class="hero-section relative w-full h-screen flex flex-col justify-between p-8 md:p-12 overflow-hidden">
+                <!-- Header -->
+                <header class="flex justify-between items-center z-10 font-sans text-sm uppercase tracking-widest">
+                    <div class="font-bold tracking-widest">Literia.</div>
+                    <nav class="hidden md:flex gap-8 text-graphite">
+                        <a href="#" class="hover:text-ink transition-colors" data-cursor="Click">Archive</a>
+                        <a href="#" class="hover:text-ink transition-colors" data-cursor="Click">Journal</a>
+                        <a href="#" class="hover:text-ink transition-colors" data-cursor="Click">About</a>
+                    </nav>
+                    <div class="cursor-pointer" data-cursor="Menu">Menu</div>
+                </header>
+
+                <!-- Hero Content -->
+                <div class="flex flex-col md:flex-row justify-between items-end pb-12 z-10">
+                    <h1 class="font-serif text-huge text-ink w-full md:w-2/3 title-mask">
+                        <div class="overflow-hidden"><span class="title-line">Membaca</span></div>
+                        <div class="overflow-hidden"><span class="title-line">Ulang</span></div>
+                        <div class="overflow-hidden"><span class="title-line text-saddle italic pr-4">Dunia.</span>
+                        </div>
+                    </h1>
+
+                    <div class="w-full md:w-1/4 mt-12 md:mt-0 title-mask">
+                        <div class="overflow-hidden">
+                            <p
+                                class="font-sans text-sm md:text-base text-graphite leading-relaxed text-justify title-line">
+                                Literia bukan sekadar tempat menemukan bacaan. Kami adalah ruang kontemplasi digital,
+                                mengkurasi literatur yang mendefinisikan ulang cara kita melihat realitas, lembar demi
+                                lembar.
+                            </p>
+                        </div>
+                        <div class="overflow-hidden mt-6">
+                            <p class="font-sans text-xs uppercase tracking-widest text-ink title-line font-semibold">
+                                Scroll untuk mengeksplorasi ↓
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 02: THE ARCHIVE (HORIZONTAL SCROLL) -->
+            <section class="archive-section relative w-full h-screen bg-transparent flex items-center overflow-hidden">
+                <div class="archive-wrapper gap-12 md:gap-16 items-center">
+
+                    <!-- Section Title inside scroll -->
+                    <div class="w-[30vw] shrink-0 pl-8 md:pl-12">
+                        <h2 class="font-serif text-5xl md:text-7xl mb-6">The<br><span
+                                class="italic text-graphite">Archive</span></h2>
+                        <p class="font-sans text-sm text-graphite max-w-xs">Koleksi terkurasi dari pikiran-pikiran
+                            paling cemerlang abad ini. Sentuh untuk merasakan teksturnya.</p>
+                    </div>
+
+                    <!-- Book 1 -->
+                    <div class="book-item shrink-0 w-[65vw] md:w-[20vw] flex flex-col items-center gap-6 cursor-pointer"
+                        data-cursor-text="Read" data-bg="#E4DFD9">
+                        <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                            <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop"
+                                alt="Book Cover 1" class="w-full h-full object-cover book-cover rounded-sm"
+                                data-title="The Architecture of Silence" data-author="Elias Thorne"
+                                data-synopsis="Sebuah eksplorasi mendalam tentang bagaimana ruang kosong membentuk psikologi manusia modern dalam lanskap urban.">
+                        </div>
+                        <div class="text-center opacity-0 book-meta transition-opacity duration-500">
+                            <h3 class="font-serif text-2xl">The Architecture of Silence</h3>
+                            <p class="font-sans text-xs uppercase tracking-widest text-graphite mt-2">Elias Thorne</p>
+                        </div>
+                    </div>
+
+                    <!-- Book 2 -->
+                    <div class="book-item shrink-0 w-[65vw] md:w-[20vw] flex flex-col items-center gap-6 cursor-pointer mt-16"
+                        data-cursor-text="Read" data-bg="#D8DCE0">
+                        <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                            <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop"
+                                alt="Book Cover 2" class="w-full h-full object-cover book-cover rounded-sm"
+                                data-title="Oceanic Feelings" data-author="Maya Lin"
+                                data-synopsis="Kumpulan esai puitis mengenai hubungan emosional antara manusia dan bentang alam yang tak terhingga.">
+                        </div>
+                        <div class="text-center opacity-0 book-meta transition-opacity duration-500">
+                            <h3 class="font-serif text-2xl">Oceanic Feelings</h3>
+                            <p class="font-sans text-xs uppercase tracking-widest text-graphite mt-2">Maya Lin</p>
+                        </div>
+                    </div>
+
+                    <!-- Book 3 -->
+                    <div class="book-item shrink-0 w-[65vw] md:w-[20vw] flex flex-col items-center gap-6 cursor-pointer"
+                        data-cursor-text="Read" data-bg="#E3D7D1">
+                        <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                            <img src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800&auto=format&fit=crop"
+                                alt="Book Cover 3" class="w-full h-full object-cover book-cover rounded-sm"
+                                data-title="Warmth of The Sun" data-author="Julian Barnes"
+                                data-synopsis="Novel yang menggugah tentang memori, penyesalan, dan cahaya yang tersisa di masa senja kehidupan.">
+                        </div>
+                        <div class="text-center opacity-0 book-meta transition-opacity duration-500">
+                            <h3 class="font-serif text-2xl">Warmth of The Sun</h3>
+                            <p class="font-sans text-xs uppercase tracking-widest text-graphite mt-2">Julian Barnes</p>
+                        </div>
+                    </div>
+
+                    <!-- Book 4 -->
+                    <div class="book-item shrink-0 w-[65vw] md:w-[20vw] flex flex-col items-center gap-6 cursor-pointer mt-16"
+                        data-cursor-text="Read" data-bg="#D3DAD6">
+                        <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                            <img src="https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?q=80&w=800&auto=format&fit=crop"
+                                alt="Book Cover 4" class="w-full h-full object-cover book-cover rounded-sm"
+                                data-title="Botanical Geometry" data-author="Dr. Aris V."
+                                data-synopsis="Studi visual menakjubkan tentang pola matematis sempurna yang tersembunyi dalam struktur tanaman sehari-hari.">
+                        </div>
+                        <div class="text-center opacity-0 book-meta transition-opacity duration-500">
+                            <h3 class="font-serif text-2xl">Botanical Geometry</h3>
+                            <p class="font-sans text-xs uppercase tracking-widest text-graphite mt-2">Dr. Aris V.</p>
+                        </div>
+                    </div>
+
+                    <!-- End padding -->
+                    <div class="w-[10vw] shrink-0"></div>
+                </div>
+            </section>
+
+            <!-- SECTION 03 : LIBRERIA / FULL CATALOG -->
+            <section
+                class="catalog-section relative w-full bg-paper py-24 px-8 md:px-12 z-10 border-t border-graphite/20">
+                <div class="max-w-7xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-between items-end mb-16">
+                        <div>
+                            <h2 class="font-serif text-5xl md:text-7xl mb-4 text-ink">Libreria.</h2>
+                            <p class="font-sans text-sm text-graphite max-w-md">Eksplorasi koleksi literatur kami yang
+                                lebih dalam. Temukan berbagai genre dan pemikiran terkurasi.</p>
+                        </div>
+
+                        <!-- Categories -->
+                        <div
+                            class="flex gap-6 mt-8 md:mt-0 overflow-x-auto w-full md:w-auto pb-4 md:pb-0 hide-scrollbar">
+                            <button
+                                class="font-sans text-xs uppercase tracking-widest text-ink border-b border-ink pb-1 whitespace-nowrap"
+                                data-cursor="Filter">All Books</button>
+                            <button
+                                class="font-sans text-xs uppercase tracking-widest text-graphite hover:text-ink transition-colors pb-1 whitespace-nowrap"
+                                data-cursor="Filter">Fiction</button>
+                            <button
+                                class="font-sans text-xs uppercase tracking-widest text-graphite hover:text-ink transition-colors pb-1 whitespace-nowrap"
+                                data-cursor="Filter">Philosophy</button>
+                            <button
+                                class="font-sans text-xs uppercase tracking-widest text-graphite hover:text-ink transition-colors pb-1 whitespace-nowrap"
+                                data-cursor="Filter">Art & Design</button>
+                            <button
+                                class="font-sans text-xs uppercase tracking-widest text-graphite hover:text-ink transition-colors pb-1 whitespace-nowrap"
+                                data-cursor="Filter">Science</button>
+                        </div>
+                    </div>
+
+                    <!-- Book Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+                        <!-- Catalog Book 1 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 1" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Echoes of Eternity" data-author="Sarah Jenkins"
+                                    data-synopsis="Kisah fiksi ilmiah tentang perjalanan waktu dan dampaknya pada ingatan manusia di masa depan yang tidak pasti.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Echoes of Eternity</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Fiction</p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$18.50</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 2 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 2" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="The Mind's Eye" data-author="Marcus Aurelius"
+                                    data-synopsis="Kompilasi pemikiran stoikisme untuk menghadapi tantangan kehidupan modern dengan ketenangan.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">The Mind's Eye</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Philosophy
+                                    </p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$22.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 3 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 3" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Color Theory" data-author="Johannes Itten"
+                                    data-synopsis="Penelitian mendalam mengenai bagaimana warna mempengaruhi psikologi estetika dan komunikasi visual.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Color Theory</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Art &
+                                        Design</p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$35.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 4 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 4" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Quantum Reality" data-author="Dr. Neil Watts"
+                                    data-synopsis="Penjelasan sederhana mengenai teori fisika mekanika kuantum yang revolusioner bagi orang awam.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Quantum Reality</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Science</p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$28.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 5 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 5" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Lost Letters" data-author="Elena Ferrante"
+                                    data-synopsis="Novel sejarah tentang wanita yang mencari saudara perempuannya yang hilang saat perang di Italia masa lampau.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Lost Letters</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Fiction</p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$21.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 6 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 6" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Abstract Thoughts" data-author="Jean-Paul Sartre"
+                                    data-synopsis="Diskusi mendalam mengenai kebebasan dan eksistensialisme dalam konteks masyarakat abad ke-21.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Abstract Thoughts</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Philosophy
+                                    </p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$19.50</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 7 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1507738978512-35798112892c?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 7" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Type & Space" data-author="Massimo Vignelli"
+                                    data-synopsis="Panduan tipografi esensial dan pemahaman grid tata letak untuk desainer grafis masa kini.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Type & Space</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Art &
+                                        Design</p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$42.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Book 8 -->
+                        <div class="book-item flex flex-col items-center gap-4 cursor-pointer" data-cursor-text="Read"
+                            data-bg="#F7F5F0">
+                            <div class="w-full aspect-[2/3] relative book-cover-wrapper">
+                                <img src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=800&auto=format&fit=crop"
+                                    alt="Catalog Book 8" class="w-full h-full object-cover book-cover rounded-sm"
+                                    data-title="Space & Time" data-author="Stephen Hawking"
+                                    data-synopsis="Sebuah pemahaman baru tentang keajaiban alam semesta mulai dari lubang hitam hingga teori dawai.">
+                            </div>
+                            <div class="text-left w-full mt-2">
+                                <h3 class="font-serif text-2xl truncate w-full">Space & Time</h3>
+                                <div class="flex justify-between items-center mt-2 w-full">
+                                    <p class="font-sans text-[10px] uppercase tracking-widest text-graphite">Science</p>
+                                    <p class="font-serif italic text-sm text-ink font-semibold">$25.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex items-center justify-center mt-24 gap-4 pb-12">
+                        <button
+                            class="w-10 h-10 flex items-center justify-center rounded-full border border-graphite/30 text-graphite hover:border-ink hover:text-ink transition-all duration-300 transform hover:-translate-x-1"
+                            data-cursor="Prev">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 2L3 7L8 12" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                        </button>
+
+                        <div class="flex items-center gap-2 font-sans text-sm">
+                            <button class="w-10 h-10 flex items-center justify-center rounded-full bg-ink text-paper"
+                                data-cursor="1">1</button>
+                            <button
+                                class="w-10 h-10 flex items-center justify-center rounded-full text-graphite hover:text-ink hover:bg-sand transition-colors"
+                                data-cursor="2">2</button>
+                            <button
+                                class="w-10 h-10 flex items-center justify-center rounded-full text-graphite hover:text-ink hover:bg-sand transition-colors"
+                                data-cursor="3">3</button>
+                            <span class="text-graphite w-6 text-center">...</span>
+                            <button
+                                class="w-10 h-10 flex items-center justify-center rounded-full text-graphite hover:text-ink hover:bg-sand transition-colors"
+                                data-cursor="12">12</button>
+                        </div>
+
+                        <button
+                            class="w-10 h-10 flex items-center justify-center rounded-full border border-graphite/30 text-graphite hover:border-ink hover:text-ink transition-all duration-300 transform hover:translate-x-1"
+                            data-cursor="Next">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 2L11 7L6 12" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 04 : AUTHOR SPOTLIGHT -->
+            <section
+                class="author-section relative w-full h-screen overflow-hidden bg-ink text-paper flex items-center justify-center">
+                <!-- Parallax Image Wrapper -->
+                <div class="absolute inset-0 w-full h-[120%] -top-[10%] pointer-events-none z-0" id="author-parallax">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1288&auto=format&fit=crop"
+                        alt="Author Portrait" class="w-full h-full object-cover grayscale opacity-40 author-img"
+                        id="author-image">
+                </div>
+
+                <!-- Content -->
+                <div class="relative z-10 text-center max-w-4xl px-8" data-cursor="Displace">
+                    <h2 class="font-serif text-4xl md:text-6xl leading-tight mb-8">
+                        "Setiap buku adalah <span class="italic font-light text-sand">kertas digital</span> yang
+                        menyerap jiwa pembacanya, tidak pernah sama ketika dibaca dua kali."
+                    </h2>
+                    <p class="font-sans text-sm uppercase tracking-widest text-sand/70">
+                        — The Voices, Literia Editorial
+                    </p>
+                </div>
+            </section>
+
+        </div> <!-- End Smooth Content -->
+    </div> <!-- End Main Wrapper -->
+
+    <!-- SECTION 05 : THE FOOTER / COLOPHON (REVEAL) -->
+    <footer class="footer-reveal pt-24 pb-12 px-8 md:px-12">
+        <div class="w-full h-[1px] bg-graphite/30 mb-16"></div>
+
+        <div class="flex flex-col md:flex-row justify-between h-full">
+            <!-- Left: Newsletter -->
+            <div class="w-full md:w-1/2 mb-12 md:mb-0">
+                <h3 class="font-serif text-4xl md:text-5xl mb-6">Join The Reading Club</h3>
+                <form class="relative max-w-md mt-12" onsubmit="event.preventDefault();">
+                    <input type="email" placeholder="Alamat Email Anda"
+                        class="w-full bg-transparent border-b border-paper/30 pb-4 outline-none font-sans text-lg focus:border-paper transition-colors rounded-none placeholder:text-graphite">
+                    <button type="submit"
+                        class="absolute right-0 bottom-4 font-sans text-xs uppercase tracking-widest hover:text-sand transition-colors"
+                        data-cursor="Submit">
+                        Subscribe
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Colophon -->
+            <div class="w-full md:w-1/3 flex flex-col justify-between font-sans text-sm text-graphite">
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-paper uppercase tracking-widest text-xs mb-4">Location</h4>
+                        <p class="leading-relaxed">Jl. Sastra No. 42<br>Jakarta Selatan, 12190<br>Indonesia</p>
+                    </div>
+                    <div>
+                        <h4 class="text-paper uppercase tracking-widest text-xs mb-4">Social</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="hover:text-paper transition-colors">Instagram</a></li>
+                            <li><a href="#" class="hover:text-paper transition-colors">Twitter (X)</a></li>
+                            <li><a href="#" class="hover:text-paper transition-colors">Goodreads</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-16 md:mt-0 flex justify-between items-end border-t border-graphite/30 pt-4">
+                    <p>© 2026 Literia Publishing</p>
+                    <p>ISBN Registry: 978-602-000</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Flip.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.33/dist/lenis.min.js"></script>
+
+    <script>
+        // Register GSAP Plugins
+        gsap.registerPlugin(ScrollTrigger, Flip);
+
+        // --- 1. Init Lenis (Smooth Scroll) ---
+        const lenis = new Lenis({
+            duration: 1.5, // Lambat dan berat
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: 'vertical',
+            gestureOrientation: 'vertical',
+            smoothWheel: true,
+            wheelMultiplier: 0.8,
+            touchMultiplier: 2,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Sync Lenis with ScrollTrigger
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+        });
+        gsap.ticker.lagSmoothing(0);
+
+        // --- 2. Custom Cursor Logic ---
+        const cursor = document.getElementById('cursor');
+        const cursorText = document.getElementById('cursor-text');
+
+        // Follow mouse pointer
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0.15,
+                ease: "power2.out"
+            });
+
+            // Show cursor after first move
+            if (!cursor.classList.contains('active')) cursor.classList.add('active');
+        });
+
+        // Hover interactions
+        document.querySelectorAll('a, button, [data-cursor]').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.style.transform = 'translate(-50%, -50%) scale(2)';
+                cursor.style.mixBlendMode = 'difference';
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+                cursor.style.mixBlendMode = '';
+            });
+        });
+
+        // Specific hover for book covers (Carousel)
+        document.querySelectorAll('.book-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                cursor.classList.add('hover-book');
+                cursorText.innerText = item.getAttribute('data-cursor-text') || 'Read';
+                cursorText.classList.remove('opacity-0');
+
+                // Show metadata below book if it has .book-meta (archive section)
+                const meta = item.querySelector('.book-meta');
+                if (meta) gsap.to(meta, { opacity: 1, duration: 0.5 });
+
+                // Dynamic Background Change (Quiet Luxury transition)
+                const bgColor = item.getAttribute('data-bg');
+                document.body.style.backgroundColor = bgColor;
+            });
+
+            item.addEventListener('mouseleave', () => {
+                cursor.classList.remove('hover-book');
+                cursorText.classList.add('opacity-0');
+
+                const meta = item.querySelector('.book-meta');
+                if (meta) gsap.to(meta, { opacity: 0, duration: 0.3 });
+            });
+        });
+
+        // Reset background when leaving archive section
+        ScrollTrigger.create({
+            trigger: ".archive-section",
+            start: "top center",
+            end: "bottom center",
+            onLeave: () => document.body.style.backgroundColor = 'var(--bg-color)',
+            onLeaveBack: () => document.body.style.backgroundColor = 'var(--bg-color)',
+        });
+
+
+        // --- 3. Section 1: Hero Animation ---
+        const heroTl = gsap.timeline();
+
+        // Initial reveal
+        heroTl.to(".title-line", {
+            y: "0%",
+            duration: 1.5,
+            stagger: 0.15,
+            ease: "power4.out",
+            delay: 0.2
+        });
+
+        // Fade and blur on scroll
+        gsap.to(".hero-section", {
+            opacity: 0,
+            filter: "blur(10px)",
+            y: 100,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".hero-section",
+                start: "top top",
+                end: "bottom top",
+                scrub: true
+            }
+        });
+
+        // --- 4. Section 2: Archive Horizontal Scroll ---
+        let mm = gsap.matchMedia();
+
+        mm.add("(min-width: 768px)", () => {
+            const archiveWrapper = document.querySelector(".archive-wrapper");
+            const getScrollAmount = () => -(archiveWrapper.scrollWidth - window.innerWidth);
+
+            gsap.to(archiveWrapper, {
+                x: getScrollAmount,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".archive-section",
+                    start: "top top",
+                    end: () => `+=${archiveWrapper.scrollWidth * 0.6}`, // Jarak scroll dipendekkan agar terasa lebih cepat
+                    pin: true,
+                    scrub: 1, // Mengikuti scroll dengan halus (menghapus redundant animation property)
+                    invalidateOnRefresh: true
+                }
+            });
+        });
+
+        // 3D Tilt Effect on Books
+        document.querySelectorAll('.book-cover-wrapper').forEach(wrapper => {
+            const cover = wrapper.querySelector('.book-cover');
+
+            wrapper.addEventListener('mousemove', (e) => {
+                const rect = wrapper.getBoundingClientRect();
+                const x = e.clientX - rect.left; // x position within the element.
+                const y = e.clientY - rect.top;  // y position within the element.
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = ((y - centerY) / centerY) * -15; // Max rotation 15deg
+                const rotateY = ((x - centerX) / centerX) * 15;
+
+                gsap.to(cover, {
+                    rotateX: rotateX,
+                    rotateY: rotateY,
+                    duration: 0.5,
+                    ease: "power2.out",
+                    transformPerspective: 1000
+                });
+            });
+
+            wrapper.addEventListener('mouseleave', () => {
+                gsap.to(cover, {
+                    rotateX: 0,
+                    rotateY: 0,
+                    duration: 1,
+                    ease: "elastic.out(1, 0.3)"
+                });
+            });
+        });
+
+
+        // --- 5. Section 3: FLIP Book Detail Transition ---
+        const detailView = document.getElementById('detail-view');
+        const detailImageTarget = document.getElementById('detail-image-target');
+        const btnCloseDetail = document.getElementById('close-detail');
+        const detailContent = document.querySelector('.detail-content');
+
+        let activeClone = null;
+        let originalCover = null;
+
+        document.querySelectorAll('.book-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Pause Lenis
+                lenis.stop();
+
+                originalCover = item.querySelector('.book-cover');
+                const imgData = originalCover;
+
+                // Set text data
+                document.getElementById('detail-title').innerText = imgData.getAttribute('data-title');
+                document.getElementById('detail-author').innerText = imgData.getAttribute('data-author');
+                document.getElementById('detail-synopsis').innerText = imgData.getAttribute('data-synopsis');
+
+                // Get exact position of clicked image
+                const rect = originalCover.getBoundingClientRect();
+
+                // Create a clone for the FLIP animation to avoid breaking scrolltrigger pin layout
+                activeClone = originalCover.cloneNode(true);
+                // Reset any 3D transforms on clone
+                gsap.set(activeClone, { rotateX: 0, rotateY: 0, clearProps: "transform" });
+
+                activeClone.style.position = 'fixed';
+                activeClone.style.top = rect.top + 'px';
+                activeClone.style.left = rect.left + 'px';
+                activeClone.style.width = rect.width + 'px';
+                activeClone.style.height = rect.height + 'px';
+                activeClone.style.zIndex = '60';
+                activeClone.style.margin = '0';
+
+                document.body.appendChild(activeClone);
+
+                // Hide original temporarily
+                gsap.set(originalCover, { opacity: 0 });
+
+                // Capture initial state
+                const state = Flip.getState(activeClone);
+
+                // Show detail overlay
+                detailView.classList.add('is-open');
+                detailView.classList.remove('pointer-events-none');
+
+                // Move clone to target container inside detail view
+                detailImageTarget.appendChild(activeClone);
+
+                // Change clone styles to fit container
+                activeClone.style.position = 'absolute';
+                activeClone.style.top = '0';
+                activeClone.style.left = '0';
+                activeClone.style.width = '100%';
+                activeClone.style.height = '100%';
+
+                // Animate FLIP
+                Flip.from(state, {
+                    duration: 1,
+                    ease: "power4.inOut",
+                    onComplete: () => {
+                        // Reveal text content
+                        gsap.to(detailContent, {
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.8,
+                            ease: "power3.out"
+                        });
+                    }
+                });
+            });
+        });
+
+        // Close Detail View
+        btnCloseDetail.addEventListener('click', () => {
+            // Hide text content
+            gsap.to(detailContent, {
+                opacity: 0,
+                y: 40,
+                duration: 0.4,
+                ease: "power2.in"
+            });
+
+            // Capture state from fullscreen
+            const state = Flip.getState(activeClone);
+
+            // Move clone back to body to return to original position
+            document.body.appendChild(activeClone);
+
+            const rect = originalCover.getBoundingClientRect();
+            activeClone.style.position = 'fixed';
+            activeClone.style.top = rect.top + 'px';
+            activeClone.style.left = rect.left + 'px';
+            activeClone.style.width = rect.width + 'px';
+            activeClone.style.height = rect.height + 'px';
+
+            // Hide overlay
+            detailView.classList.remove('is-open');
+            detailView.classList.add('pointer-events-none');
+
+            // Reset "Add to Cart" button if added
+            const btnAdd = document.getElementById('btn-add-cart');
+            btnAdd.classList.remove('added');
+
+            // Animate FLIP back
+            Flip.from(state, {
+                duration: 0.8,
+                ease: "power3.inOut",
+                onComplete: () => {
+                    // Show original, remove clone
+                    gsap.set(originalCover, { opacity: 1 });
+                    activeClone.remove();
+                    activeClone = null;
+                    originalCover = null;
+
+                    // Resume Lenis
+                    lenis.start();
+                }
+            });
+        });
+
+        // Add to Cart Micro-interaction
+        document.getElementById('btn-add-cart').addEventListener('click', function () {
+            if (!this.classList.contains('added')) {
+                this.classList.add('added');
+            }
+        });
+
+
+        // --- 6. Section 4: Author Parallax & WebGL-like Hover ---
+        // Vertical Parallax
+        gsap.to("#author-image", {
+            yPercent: 20,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".author-section",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true
+            }
+        });
+
+        // SVG Displacement Filter Animation (Simulates WebGL Water/Wind)
+        const authorSection = document.querySelector('.author-section');
+        const filterMap = document.querySelector('#displacementMap');
+
+        let filterTimeline = gsap.timeline({ paused: true });
+        filterTimeline.to(filterMap, {
+            attr: { scale: 30 }, // Increase distortion
+            duration: 1.5,
+            ease: "power2.out"
+        });
+
+        authorSection.addEventListener('mouseenter', () => {
+            filterTimeline.play();
+            // Change cursor
+            cursor.classList.add('hover-book');
+            cursorText.innerText = 'Listen';
+            cursorText.classList.remove('opacity-0');
+        });
+
+        authorSection.addEventListener('mouseleave', () => {
+            filterTimeline.reverse();
+            cursor.classList.remove('hover-book');
+            cursorText.classList.add('opacity-0');
+        });
+
+    </script>
+</body>
+
+</html>
