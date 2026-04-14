@@ -4,8 +4,9 @@
 // Section 03: Full catalog grid with category filter buttons and pagination UI.
 // Clicking a book triggers the detail overlay via onBookClick callback.
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { gsap } from "gsap";
 import type { BookData } from "./ArchiveSection";
 
 const CATEGORIES = ["All Books", "Fiction", "Philosophy", "Art & Design", "Science"] as const;
@@ -121,15 +122,69 @@ interface LibreriaSectionProps {
 
 export default function LibreriaSection({ onBookClick }: LibreriaSectionProps) {
   const [activeCategory, setActiveCategory] = useState<Category>("All Books");
+  const sectionRef = useRef<HTMLElement>(null);
 
   const filteredBooks =
     activeCategory === "All Books"
       ? CATALOG_BOOKS
       : CATALOG_BOOKS.filter((b) => b.category === activeCategory);
 
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const wrappers = section.querySelectorAll<HTMLDivElement>(".book-cover-wrapper");
+    const cleanupFns: (() => void)[] = [];
+
+    wrappers.forEach((bw) => {
+      const cover = bw.querySelector<HTMLImageElement>(".book-cover");
+      if (!cover) return;
+
+      const onMove = (e: MouseEvent) => {
+        const rect = bw.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const rotateX = ((y - cy) / cy) * -15;
+        const rotateY = ((x - cx) / cx) * 15;
+
+        gsap.to(cover, {
+          rotateX,
+          rotateY,
+          duration: 0.5,
+          ease: "power2.out",
+          transformPerspective: 1000,
+        });
+      };
+
+      const onLeave = () => {
+        gsap.to(cover, {
+          rotateX: 0,
+          rotateY: 0,
+          duration: 1,
+          ease: "elastic.out(1, 0.3)",
+        });
+      };
+
+      bw.addEventListener("mousemove", onMove);
+      bw.addEventListener("mouseleave", onLeave);
+
+      cleanupFns.push(() => {
+        bw.removeEventListener("mousemove", onMove);
+        bw.removeEventListener("mouseleave", onLeave);
+      });
+    });
+
+    return () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [filteredBooks]);
+
   return (
     <section
       id="libreria"
+      ref={sectionRef}
       className="catalog-section relative w-full bg-paper py-24 px-8 md:px-12 z-10 border-t border-graphite/20"
     >
       <div className="max-w-7xl mx-auto">
